@@ -1,4 +1,3 @@
-#załadowanie danych
 library(tidyverse)
 library(stringr)
 library(dplyr)
@@ -63,7 +62,7 @@ Autko$brand[Autko$brand == "mercedes-benz"] <- "mercedes"
 Autko$brand = Autko$brand %>%
   factor(labels = sort(unique(Autko$brand)))
 
-#Analiza zbioru 
+#Analiza zbioru
 #wyliczenie najpopularniejszych marek 
 namesOccurence <- Autko %>% group_by(brand) %>% tally() %>% rename(Number_of_Occurences = n)
 #Usuniecie dwoch pustych rekordow
@@ -87,15 +86,19 @@ theme(plot.title = element_text(size = 15,  face= 'bold', margin = ))+
   theme(axis.title.y= element_text( face="bold")) 
 #jak widać najpopularniejszymi markami jest ford i chevrolet 
 
-#wykres spalania dla wybranych 20 rodzjaów aut
-Autko %>% group_by(brand) %>% summarise(sredniam = mean(mpg, na.rm = TRUE)) %>%  top_n(20) %>%
+#wykres mpg
+Autko %>% group_by(brand) %>% 
+  summarise(sredniam = mean(mpg, na.rm = TRUE))  %>%
   ggplot(aes(x=brand, y=sredniam))+geom_bar(stat='identity')  + coord_flip()+
   xlab("Marki samochodów") +ylab("średnia spalania")+
-  ggtitle("Średnia spalań dla wybranych 20 aut")+
+  ggtitle("Średnia spalań")+
   theme(plot.title = element_text(size = 15,  face= 'bold', margin = ))+
   theme(legend.title =element_text(size = 40, face= 'bold'), legend.position = "bottom")+
   theme(axis.title.x = element_text( face="bold"))+
   theme(axis.title.y= element_text( face="bold"))
+
+
+
 
 
 Autko2<-Autko%>% group_by(model_year) %>%summarise(ilosc = n())
@@ -134,3 +137,54 @@ Autko %>% group_by(model_year)%>% summarise(srednia = mean(horsepower), srednia2
   theme(axis.title.x = element_text( face="bold"))+
   theme(axis.title.y= element_text( face="bold")) +
   theme(plot.title = element_text(size = 15,  face= 'bold' ))
+
+
+#DODANIE NOWEJ KOLUMNY MPGOPT - OKRESLAJACEJ OCHYLENIE OD SREDNIEJ MPG
+Autko$mpgopt<- round((Autko$mpg - mean(Autko$mpg))/sd(Autko$mpg), 2)
+Autko$typ <- ifelse(Autko$mpgopt < 0, "pod", "nad")
+#wykres dla powyżej i poniżej średniej mpg
+Autko %>%group_by(brand) %>% ggplot(aes(x=brand, y=mpgopt, label=mpgopt)) + 
+  geom_bar(stat='identity', aes(fill=typ), width=.5)  +
+  scale_fill_manual(name="Według mpg", 
+  labels = c("Powyżej średniej", "Poniżej średniej"), 
+  values = c("nad"="#00ba38", "pod"="#f8766d")) + 
+  labs(subtitle="Normalised mileage from 'mtcars'", 
+  title= "Diverging Bars") + 
+  coord_flip()
+
+
+#wyliczenie procentów
+namesOccurence$procent <- round(namesOccurence$Number_of_Occurences / sum(namesOccurence$Number_of_Occurences), digits = 2)
+
+
+#wykres kołowy
+pie <- namesOccurence %>% filter(procent>0) %>%
+  ggplot(aes(x = "", y=procent ,fill = factor(brand))) + 
+  geom_bar(width = 1, stat = "identity") +
+  theme(axis.line = element_blank(), 
+        plot.title = element_text(hjust=0.5)) + 
+  labs(fill="marki", 
+       x=NULL, 
+       y=NULL, 
+       title="Wykres kołowy dla najczęściej występowanych marek")
+
+pie + coord_polar(theta = "y", start=0) +  geom_text(aes(x = 1.3, label = procent), position = position_stack(vjust = 0.5), size=2) 
+
+
+
+
+
+#machine learning
+set.seed(100)
+#wybieranie testu i trainingu
+indexes <- sample(nrow(Autko), (0.9*nrow(Autko)), replace = FALSE)
+trainData <- Autko[indexes, ]
+testData <- Autko[-indexes, ]
+
+
+
+
+
+
+
+
