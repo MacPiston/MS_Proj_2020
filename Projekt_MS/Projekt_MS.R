@@ -172,8 +172,6 @@ pie + coord_polar(theta = "y", start=0) +  geom_text(aes(x = 1.3, label = procen
 
 
 
-
-
 #machine learning
 set.seed(100)
 #wybieranie testu i trainingu
@@ -182,9 +180,28 @@ trainData <- Autko[indexes, ]
 testData <- Autko[-indexes, ]
 
 
+library(ggplot2)
+library(ggdendro)
+theme_set(theme_bw())
 
 
+#dist() is used to compute distance between sample
+#hclust() performs the hierarchical clustering
+# plot() function can plot the output directly as a tree
 
+#dendrogram
+
+Autko2<- testData[,-c(2,7,8,9,10)]
+mean_data <- apply(Autko2,2,mean)
+std<- apply(Autko2, 2,sd)
+#można to robić manulanie  (x - mean(x)) / sd(x) ale lepsze jest scaling
+Autko2<-scale(Autko2, mean_data, std)
+Autko2
+
+distance <- dist(Autko2)
+distance
+hc<-hclust(distance)
+plot(hc, labels = testData$brand)
 
 
 
