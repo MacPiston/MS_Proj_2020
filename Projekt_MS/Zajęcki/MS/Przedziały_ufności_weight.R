@@ -1,6 +1,6 @@
-#średnia z próby (spalanie)
+#średnia z próby (waga)
 weight_mu <- mean(Autko$weight)
-#odchylenie standardowe (spalanie)
+#odchylenie standardowe (waga)
 weight_sigma <- sd(Autko$weight)
 
 #NORMALNE PRZEDZIAŁY UFNOŚCI DLA WARTOŚCI OCZEKIWANEJ

@@ -1,5 +1,5 @@
-#CZY AUTA O POJEMNOŚCI WIĘKSZEJ NIŻ 250 MAJĄ WIĘKSZA MOC?
-#Średnie moce
+#CZY AUTA O POJEMNOŚCI WIĘKSZEJ NIŻ 250 MAJĄ WIĘKSZA MOC? Test dwóch średnich
+# Moce dla obu rodzajów
 horsepower.over250 <- Autko$horsepower[Autko$displacement > 250]
 horsepower.under250 <- Autko$horsepower[Autko$displacement <= 250]
 

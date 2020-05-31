@@ -1,5 +1,5 @@
-#CZY AUTA Z 8 CYLINDRAMI PALĄ WIĘCEJ NIŻ TE Z 6? Test dwóch średnich
-#Średnie spalania dla obu rodzajów samochodów
+#CZY AUTA Z 8 CYLINDRAMI PALĄ WIĘCEJ (MPG JEST MNIEJSZE) NIŻ TE Z 6? Test dwóch średnich
+# Spalania dla obu rodzajów samochodów
 mpg.8 <- Autko$mpg[Autko$cylinders == 8]
 mpg.6 <- Autko$mpg[Autko$cylinders == 6]
 
