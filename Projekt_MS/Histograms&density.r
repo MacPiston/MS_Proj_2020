@@ -18,9 +18,7 @@ zakreskg <- maxkg - minkg
 zakresacc <- maxacc - minacc
 
 # iloœæ danych
-puste <- colSums(is.na(Autko))
-wszystko <- as.numeric(nrow(Autko))
-ilosc <- as.numeric(wszystko - puste)
+ilosc <- as.numeric(nrow(Autko))
 
 pierwiastek <- sqrt(ilosc)
 pierwiastek <- ceiling(pierwiastek)
@@ -32,14 +30,11 @@ szerpow <- zakrespow / pierwiastek
 szerkg <- zakreskg/ pierwiastek
 szeracc <- zakresacc / pierwiastek
 
-
 szermpg<-szermpg[1]
 szerdis <- szerdis[1]
 szerpow <- szerpow[1]
 szerkg <- szerkg[1]
 szeracc <- szeracc[1]
- #poprawione, brałaś cały wektor, który był wypełniony tymi samymi wartosciami, wziełam 1 element, bo potrzebuje tylko jednej wartosci
-
 
 # punkty
 pktmpg = seq(minmpg, maxmpg, by = szermpg)
@@ -62,18 +57,10 @@ szeregpow <- table(przedzialpow)
 szeregkg <- table(przedzialkg)
 szeregacc <- table(przedzialacc)
 
-# histogramy
-histogrammpg = hist(x = Autko$mpg, breaks = pktmpg, col = "peachpuff", border = "black", prob = TRUE, main = "Histogram mpg", xlab = "mpg")
-histogramdis = hist(x = Autko$displacement, breaks = pktdis, col = "peachpuff", border = "black", prob = TRUE, main = "Histogram displacement", xlab = "displacement")
-histogrampow = hist(x = Autko$horsepower, breaks = pktpow, col = "peachpuff", border = "black", prob = TRUE, main = "Histogram horsepower", xlab = "horsepower")
-histogramkg = hist(x = Autko$weight, breaks = pktkg, col = "peachpuff", border = "black", prob = TRUE, main = "Histogram weight", xlab = "weight")
-histogramacc = hist(x = Autko$acceleration, breaks = pktacc, col = "peachpuff", border = "black", prob = TRUE, main = "Histogram acceleration", xlab = "acceleration")
+# histogramy + wykresy gęstości
+ggplot(Autko, aes(x=mpg)) + geom_histogram(breaks = pktmpg, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram mpg")
+ggplot(Autko, aes(x=displacement)) + geom_histogram(breaks = pktdis, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram displacement")
+ggplot(Autko, aes(x=horsepower)) + geom_histogram(breaks = pktpow, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram horsepowe")
+ggplot(Autko, aes(x=weight)) + geom_histogram(breaks = pktkg, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram weight")
+ggplot(Autko, aes(x=acceleration)) + geom_histogram(breaks = pktacc, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram acceleration")
 
-#a może ggplot2 i funkcja + geom_density()? są ładniejsze te wykresy 
-
-# wykresy gêstoœci
-densitympg = lines(density(Autko$mpg), lwd = 2, col = "red")
-densitydis = lines(density(Autko$displacement), lwd = 2, col = "red")
-densitypow = lines(density(Autko$horsepower), lwd = 2, col = "red")
-densitykg = lines(density(Autko$weight), lwd = 2, col = "red")
-densityacc = lines(density(Autko$acceleration), lwd = 2, col = "red")
