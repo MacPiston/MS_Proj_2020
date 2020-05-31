@@ -1,0 +1,653 @@
+---
+title: "Projekt Metody Statystyczne - Dokumentacja"
+author: "Autorzy: Mateusz Adamczyk, Natalia Cheba, Tomasz Depczyński, Julia Kwapień, Anna Szkoda, Maciej Zajęcki"
+date: "Data sprawozdania: 07-06-2020"
+output: html_document
+---
+```{r, echo=FALSE, results=FALSE,message=FALSE}
+library(ggplot2)
+library(visreg)
+library(knitr)
+library(corrplot)
+library(ggcorrplot)
+library(dplyr)
+library(knitr)
+library(readr)
+library(xlsx)
+Autko <- read_csv("Autko.csv")
+```
+
+## Przygotowanie danych do dalszej analizy
+
+```{r, echo=TRUE}
+library(tidyr)
+#Zamiana nazwy kolumn na odpowiednie nazwy
+names(Autko)[1] <- "mpg"
+names(Autko)[2] <- "cylinders"
+names(Autko)[3] <- "displacement"
+names(Autko)[4] <- "horsepower"
+names(Autko)[5] <- "weight"
+names(Autko)[6] <- "acceleration"
+names(Autko)[7] <- "model_year"
+names(Autko)[8] <- "origin"
+names(Autko)[9] <- "car_name"
+
+#Zmienienie na odpowiednie typy danych
+Autko$car_name<-as.character(Autko$car_name)
+Autko$cylinders = Autko$cylinders %>% factor(labels = sort(unique(Autko$cylinders)))
+Autko$model_year = Autko$model_year %>% factor(labels = sort(unique(Autko$model_year)))
+Autko$origin = Autko$origin %>% factor(labels = sort(unique(Autko$origin)))
+Autko$horsepower<-as.numeric(Autko$horsepower)
+#Oddzielenie marki i modelu 
+Autko <- separate(Autko, col = c("car_name"), into = c("brand", "model"), sep = " ", extra = "merge")
+
+#Zmamiana "?" na wartosci N/A
+Autko[Autko == "?"] <- NA
+#Zastępowanie wartości NULL średnią 
+Autko$horsepower <- ifelse(is.na(Autko$horsepower), mean(Autko$horsepower, na.rm=TRUE), Autko$horsepower)
+
+#Zamiana brandów na odpowiednie nazwy
+Autko$brand[Autko$brand == "chevroelt"] <- "chevrolet"
+Autko$brand[Autko$brand == "maxda"] <- "mazda"
+Autko$brand[Autko$brand == "vokswagen"] <- "volkswagen"
+Autko$brand[Autko$brand == "toyouta"] <- "toyota"
+Autko$brand[Autko$brand == "vw"] <- "volkswagen"
+Autko$brand[Autko$brand == "mercedes-benz"] <- "mercedes"
+
+#Zamiana na factory
+Autko$brand = Autko$brand %>%
+  factor(labels = sort(unique(Autko$brand)))
+
+
+
+
+
+```
+
+## Statystyka
+
+```{r, echo=TRUE}
+
+library(e1071)
+
+funkcja_dominanta <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+funkcja_pomiary_statystyczne <- function(wektor){
+  srednia_arytm <- mean(wektor)
+  mediana <- median(wektor)
+  dominanta <- funkcja_dominanta(wektor)
+  kwartyl1 <- as.numeric(quantile(wektor, probs = 0.25))
+  kwartyl3 <- as.numeric(quantile(wektor, probs = 0.75))
+  wariancja <- var(wektor)
+  wariancja_Obc <- wariancja * (length(wektor) - 1)/length(wektor)
+  odchyl_stand <- sqrt(wariancja)
+  odchyl_stand_Obc <- sqrt (wariancja_Obc)
+  odchyl_przec <- sum(abs(wektor - srednia_arytm))/length(wektor)
+  odchyl_cwiart <- (kwartyl3 - kwartyl1)/2
+  klas_wspol_zmienn <- odchyl_stand/srednia_arytm
+  pozyc_wspol_zmienn <- odchyl_cwiart/mediana
+  kurtoza <- kurtosis(wektor)
+  eksces <- kurtoza - 3
+  wsk_asymetrii <- kwartyl3 - (2 * mediana) + kwartyl1
+  wspol_asymertii <- wsk_asymetrii / (2 * odchyl_cwiart)
+  dol_typ_obsz_zmienn <- srednia_arytm - odchyl_stand
+  gor_typ_obsz_zmienn <- srednia_arytm + odchyl_stand
+  
+  rezultat <- c(srednia_arytm, mediana, dominanta, kwartyl1, kwartyl3, wariancja,
+                wariancja_Obc, odchyl_stand, odchyl_stand_Obc, odchyl_przec,
+                odchyl_cwiart, klas_wspol_zmienn, pozyc_wspol_zmienn, kurtoza,
+                eksces, wsk_asymetrii, wspol_asymertii, dol_typ_obsz_zmienn,
+                gor_typ_obsz_zmienn)
+  
+  return(rezultat)
+}
+
+mpg_ <- round( funkcja_pomiary_statystyczne(Autko$mpg), digits = 4)
+acceleration_ <- round(funkcja_pomiary_statystyczne(Autko$acceleration), digits = 4)
+displacement_ <- round(funkcja_pomiary_statystyczne(Autko$displacement), digits = 4)
+horsepower_ <-  round(funkcja_pomiary_statystyczne(Autko$horsepower), digits = 4)
+weight_ <- round(funkcja_pomiary_statystyczne(Autko$weight), digits = 4)
+
+tmp <- data.frame(mpg_, acceleration_,displacement_, horsepower_, weight_)
+row.names(tmp) <- c("srednia arytmetyczna: ", "mediana: ", "dominanta: ", "kwartyl 0.25: ", "kwartyl 0.75: ",
+                    "wariancja: ", "wariancja obciazona: ", "odchylenie standardowe: ",
+                    "odchylenie standardowe obciazone: ", "odchylenie przecietne: ",
+                    "odchylenie cwiartkowe: ", "klasyczny wspolczynnik zmiennosci: ",
+                    "pozycyjny wspolczynnik zmiennosci: ", "kurtoza: ", "eksces: ",
+                    "wskaznik asymetrii: ", "wspolczynnik asymetrii: ",
+                    "dolna granica typowego obszaru zmiennosci: ",
+                    "gorna granica typowego obszaru zmiennosci: ")
+
+print(tmp)
+
+
+
+```
+
+## Histogramy
+
+```{r, echo=TRUE}
+
+wynik <- function(x)
+{
+  min <- min(x, na.rm = TRUE)
+  max <- max(x, na.rm = TRUE)
+  zakres <- as.numeric(max - min)
+  ilosc <- as.numeric(nrow(Autko))
+  pierwiastek <- sqrt(ilosc)
+  pierwiastek <- ceiling(pierwiastek)
+  szer <- zakres / pierwiastek
+  szer <-szer[1]
+  pkt = seq(min, max, by = szer)
+  rezultat <- c(min, max, szer, pkt)
+  return(rezultat)
+}
+#dane zapisane w wektorze
+mpg<-wynik(Autko$mpg)
+dis<-wynik(Autko$displacement)
+kg<-wynik(Autko$weight)
+pow<-wynik(Autko$horsepower)
+acc<-wynik(Autko$acceleration)
+#przedziały
+przedzialmpg <- cut(Autko$mpg, mpg[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialdis <- cut(Autko$displacement, dis[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialpow <- cut(Autko$horsepower, pow[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialkg <- cut(Autko$weight, kg[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialacc <- cut(Autko$acceleration, acc[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+# szeregi rozdzielcze
+szeregmpg <- table(przedzialmpg)
+szeregdis <- table(przedzialdis)
+szeregpow <- table(przedzialpow)
+szeregkg <- table(przedzialkg)
+szeregacc <- table(przedzialacc)
+#histogramy
+ggplot(Autko, aes(x=mpg)) + geom_histogram(breaks =  mpg[-c(1,2,3)] , aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram mpg")
+ggplot(Autko, aes(x=displacement)) + geom_histogram(breaks = dis[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram displacement")
+ggplot(Autko, aes(x=horsepower)) +  geom_histogram(breaks = pow[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram horsepower")
+ggplot(Autko, aes(x=weight)) + geom_histogram(breaks = kg[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram weight")
+ggplot(Autko, aes(x=acceleration)) + geom_histogram(breaks =acc[-c(1,2,3)]   , aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram acceleration")
+
+
+
+
+
+
+
+```
+
+## Cumulative distribution function plot
+## Wykres funkcji rozkładu skumulowanego
+ 
+Procent skumulowany - to statystyczna miara, określająca jaki odsetek "osób",
+w tym przypadku samochodów, uzyskał pewien zakres wyników.
+Jak sama nazwa wskazuje jest to procent złożony z dodawania procentów dla pojedyńczych kategorii - następuje kumulacja.
+ 
+Dzięki temu w łatwy sposób (bez dodawania) określić odsetek(procent/prawdopodobieństwo) samochodów przyjmujących pewien zakres, <br/>licząc od początku do danej wartości.
+ 
+ 
+Aby uzyskać taki wykres należy:
+```{r}
+```
+- uzyskać dane i obliczyć kluczowe statystyki podsomowujące,
+```{r}
+```
+- wyodrębnić wektor danych "mpg" dla Auto-Mpg,
+```{r}
+mpg = Autko$mpg
+```
+- obliczyć liczbę nie brakujących wartości w "mpg"
+```{r}
+n = sum(!is.na(mpg));
+```
+- uzyskać empiryczne wartości CDF
+```{r}
+mpg.ecdf = ecdf(mpg)
+```
+ 
+Teraz możemy wykreślić empiryczną funkcję rozkłądu skumulowanego (za pomocą ecdf() i plot()):
+```{r}
+plot(mpg.ecdf, xlab = 'MPG - Miles Per Gallon', ylab = 'Prawdopodobienstwo', main = 'Empiryczny rozkład skumulowany\nMPG samochodów')
+```
+ 
+Zatem samochodóW spalających 20 galonów na milę i mniej jest około 38%.
+```{r}
+```
+Samochodów spalających 30 galonów na milę jest 80%.
+```{r}
+```
+Dla ostatniej możliwej kategorii/opcji procent zawsze będzie wynosił 100%,
+gdyż "wyczerpuje" on wszystkie pozostałe kategorie/opcje.
+ 
+<br/>
+<br/>
+ 
+## QQ plots
+## Wykresy QQ
+ 
+Wykres QQ (kwantylowo-kwantylowy) ukazuje nam korelację pomiędzy daną próbką,
+a rozkładem normalnym.<br/>Rysowana jest również 45 stopniowa linia odniesienia.<br/>
+Wykresy QQ to narzędzie graficzne pomagające nam ocenić, czy zbiór danych pochodzi z jakiegoś teoretycznego rozkładu (normalny, wykładniczy).
+Jest to kontrola wizualna, a nie hermetyczny dowód, więc jest ona subiektywna.
+ 
+ 
+Aby uzyskać taki wykres należy:
+```{r}
+```
+- utworzyć normalny wykres zmiennej -> qqnorm(),
+```{r}
+```
+- dodać linię odniesiena -> qqline(),
+```{r}
+```
+ 
+Teraz możemy utworzyć wykres QQ:
+```{r}
+```
+##### - dla MPG,
+```{r}
+qqnorm(Autko$mpg, pch=1, frame=FALSE, main="QQ plot - MPG")
+qqline(Autko$mpg, col='red', lwd=2)
+```
+```{r}
+```
+ 
+##### - dla Displacement,
+```{r}
+qqnorm(Autko$displacement, pch=1, frame=FALSE, main="QQ plot - Displacement")
+qqline(Autko$displacement, col='red', lwd=2)
+```
+```{r}
+```
+##### - dla Horsepower,
+```{r}
+qqnorm(Autko$horsepower, pch=1, frame=FALSE, main="QQ plot - Horsepower")
+qqline(Autko$horsepower, col='red', lwd=2)
+```
+```{r}
+```
+##### - dla Weight,
+```{r}
+qqnorm(Autko$weight, pch=1, frame=FALSE, main="QQ plot - Weight")
+qqline(Autko$weight, col='red', lwd=2)
+```
+```{r}
+```
+##### - dla Acceleration.
+```{r}
+qqnorm(Autko$acceleration, pch=1, frame=FALSE, main="QQ plot - Acceleration")
+qqline(Autko$acceleration, col='red', lwd=2)
+```
+```{r}
+```
+ 
+Jeśli wszystkie punkty opadają w przybliżeniu wzdłuż linii odniesienia
+to możemy założyć normalność.
+<br/>Jesli natomiast punkty tworzą krzywą zamiast linię prostą to w tym momencie mamy do czynienia z wypaczeniem danych próbki.
+ 
+ 
+## Scatterplot matrix (by class)
+## Wykres macierzy rozrzutu (według klasy)
+ 
+Macierz rozrzutu umożliwia nam zwizualizowanie korelacji małych zestawów danych.
+Wykres macierzy rozrzutu pokazuje nam wszystkie pary wykresów rozrzutu zmiennych w jednym widoku w formacie macierzy.
+ 
+ 
+Aby uzyskać wykres macierzy rozrzutu należy:
+```{r}
+```
+- utworzyć podstawowy wykres za pomocą -> pairs(),
+```{r}
+pairs(Autko[c(1,3,4,5,6)], pch = 19)
+```
+```{r}
+```
+- można usunąć dolną część wykresu,
+```{r}
+pairs(Autko[c(1,3,4,5,6)], pch = 19, lower.panel=NULL)
+```
+```{r}
+```
+- można pokolorować punkty poprzez poszczególną klasę (np. origin) w celu lepszego zobrazowania korelacji,
+```{r}
+my_cols <- c("#FF0000", "#00FF00", "#0000FF")  
+pairs(Autko[c(1,3,4,5,6)], pch = 19,  cex = 0.5,
+      col = my_cols[Autko$origin],
+      lower.panel=NULL)
+```
+
+
+
+## Regresja Liniowa
+
+Rregresja Liniowa podobnie jak klasyfikacja należy do zagadnień uczenia z nadzorem (supervised learning). 
+Uczymy model tzn. na danych treningowych, ze znanymi wartościami Y. Model ma możliwie najtrafniej
+przewidywać wartości Y na nowych danych
+
+ 
+ 
+Losowanie ziarna i wybieranie nowego testu i trainingu 
+```{r}
+set.seed(100)
+indexes <- sample(nrow(Autko), (0.7*nrow(Autko)), replace = FALSE)
+trainData <- Autko[indexes, ]
+testData <- Autko[-indexes, ]
+
+```
+
+- Wykresy dla regresji
+```{r}
+#regresja liniowa mpg i weight
+ggplot(data= Autko,aes(weight,mpg)) + geom_point()+ geom_smooth(method=lm) 
+#regresja liniowa  mpg i displacement
+ggplot(Autko,aes(displacement,mpg)) +geom_point()+geom_smooth(method=lm) 
+#regresja liniowa  weight i horsepower
+ggplot(Autko,aes(weight, horsepower)) + geom_point() +geom_smooth(method = lm)
+
+```
+```{r}
+```
+Budowanie nowych danych do stworzenia korelacji, wybranie tylko kolumn numerycznych
+```{r}
+newdata <- cor(Autko[ , c('mpg','weight', 'displacement', 'horsepower', 'acceleration')], use='complete')
+corrplot(newdata, method = "number")
+```
+```{r}
+```
+Wykres korelacji
+```{r}
+ggcorrplot(newdata, hc.order = TRUE, 
+           type = "upper", 
+           lab = TRUE, 
+           lab_size = 3, 
+           method="circle", 
+           colors = c("tomato2", "white", "springgreen3"), 
+           title="Korelacja", 
+           ggtheme=theme_bw)
+```
+Mpg z wszystkimi innymi kolumnami koreluje na minusie, posiada też wysoką korelację. 
+Największa korelację ma displacement i weight równą 0.93
+
+Tworzenie regresji liniowej dla całego zbioru z wieloma predykatorami
+```{r}
+model <- lm(mpg~weight+horsepower+origin+model_year+displacement+acceleration,data = Autko)
+summary(model)
+```
+Jak widać acceleration i horsepower są statystycznie nieistotne
+
+Wykresy dla modelu
+```{r}
+plot(model)
+```
+
+Obliczenie błędu RMS
+```{r}
+predictions <- predict(model, newdata = testData)
+sqrt(mean((predictions - testData$mpg)^2))
+```
+
+Wykonujemy regresje liniową dla trainingowego zbioru
+```{r}
+regresja <- lm( mpg ~ cylinders + displacement + horsepower + weight  + acceleration + origin, data = trainData)
+summary(regresja)
+plot(regresja)
+```
+displacement i acceleration są nieistotne 
+Ponówny więc regresję
+
+```{r}
+regresja2<- lm(formula = mpg ~ cylinders + horsepower + weight, data = trainData)
+summary(regresja2)
+plot(regresja2)
+```
+cylinder 6 jest statystycznie nieistotne, ale należy zostawić tą zmienną z powodu na inne cylindry
+Tworzymy ramkę danych dla zobaczenia wartości
+```{r}
+predykcja <- predict(regresja2, newdata = testData)
+```
+
+Różnica procentowa dla testowego zbioru
+```{r}
+wynik <- data.frame(model_year = testData$model_year,  prediction = predykcja,  actual = testData$mpg)
+roznicaproc <- abs(wynik$prediction - wynik$actual) / 
+  wynik$actual * 100
+wynik$roznicaproc <- roznicaproc
+remove(roznicaproc)
+paste("Percent difference:", round(mean(wynik$roznicaproc)))
+
+wynik$prediction <- round(wynik$prediction, 2)
+wynik$roznicaproc <- round(wynik$roznicaproc, 2)
+print(wynik)
+```
+14 procent różnicy nie jest dobrym wynikiem. Lepszym rozwiązaniem będzie drzewo decyzyjne
+
+## Tworzenie drzewa decyzyjnego
+```{r}
+library(rpart)
+regresTREE <- rpart(formula = mpg ~ ., data = testData)
+dpred <- predict(regresTREE , data = testData)
+
+plot(regresTREE, uniform=TRUE, main="Drzewo decyzyjne")
+text(regresTREE, use.n=TRUE, all=TRUE)
+
+wynik2 <- data.frame(model_year = testData$model_year, 
+                     prediction = dpred, 
+                     actual = testData$mpg)
+roznicaproc2 <- abs(wynik2$prediction - wynik2$actual) / 
+  wynik2$actual * 100
+wynik2$roznicaproc2 <- roznicaproc2
+remove(roznicaproc2)
+paste("Percent difference:", round(mean(wynik2$roznicaproc2)))
+```
+aktualnie błąd jest równy tylko 6 %
+
+
+## Dendogram
+Ponowne losowanie ziarna i losowanie zbioru treningowego i testowego
+```{r}
+set.seed(100)
+indexes <- sample(nrow(Autko), (0.9*nrow(Autko)), replace = FALSE)
+trainData <- Autko[indexes, ]
+testData <- Autko[-indexes, ]
+theme_set(theme_bw())
+```
+
+
+Wyliczenie średnich i odchyleń, ustalenie dystansów
+```{r}
+Autko2<- testData[,-c(2,7,8,9,10)]
+mean_data <- apply(Autko2,2,mean)
+std<- apply(Autko2, 2,sd)
+#można to robić manualnie  (x - mean(x)) / sd(x) ale lepsze jest scaling
+Autko2<-scale(Autko2, mean_data, std)
+distance <- dist(Autko2)
+hc<-hclust(distance)
+
+```
+Przedstawienie na wykresie
+```{r}
+plot(hc, labels = testData$origin)
+#zakładamy 3 klastry, ponieważ są trzy wartości
+groups <- cutree(hc, k=3)
+#tworzenie borderów
+rect.hclust(hc, k=3, border="red")
+```
+
+
+## Metoda K - średnich
+
+Metoda k-średnich jest metodą należacą do grupy algorytmów analizy skupień tj. 
+analizy polegającej na szukaniu i wyodrębnianiu grup obiektów podobnych (skupień). 
+
+Wykres służący z zapoznaniem się rozmieszczenia originu
+```{r}
+ggplot(testData, aes(x= horsepower, y= displacement, color = origin)) + geom_point()
+```
+
+Wybranie odpowiednich kolumn i tworzenie klastrów
+```{r}
+testData<-testData %>% select(mpg,displacement, horsepower, weight, acceleration, model_year, origin) 
+#wiemy, że mają być 3 klastry 
+k.cluster <- kmeans(testData[,c(1:6)],3, nstart = 20)
+#Wypisanie środków klastrów
+print(k.cluster$centers)
+```
+
+
+Przedstawienie klastrów
+```{r}
+table(testData$origin, k.cluster$cluster)
+```
+Pierwszy klaster jest dobrze dopasowany, w drugim pojawia się szum chociaż jest zdecydowanie lepszy od trzeciego
+
+Wykres klastrów
+```{r}
+library(cluster) 
+clusplot(testData, k.cluster$cluster, color=TRUE, shade=TRUE, labels=0,lines=0)
+```
+Pokrycie wynosi tylko 81,13% 
+
+
+
+## Wykresy obrazujące analizę zbioru
+Wyliczenie najpopularniejszych marek, obliczenie średniej i wyłuskanie wartości
+
+```{r}
+namesOccurence <- Autko %>% group_by(brand) %>% tally() %>% rename(Number_of_Occurences = n)
+srednia<-namesOccurence %>% group_by(brand) %>% summarise(srednia = mean(namesOccurence$Number_of_Occurences))
+srednia<-as.numeric(srednia[1,2])
+
+```
+
+Wykres najpopularniejszych samochodów (top 20), czarną linią przerywaną zaznaczono średnią wystąpień
+
+```{r}
+
+namesOccurence  %>% top_n(20, Number_of_Occurences) %>% arrange(desc(Number_of_Occurences)) %>% ggplot(aes(x=brand, y=Number_of_Occurences)) +
+  geom_bar(stat='identity') +
+  coord_flip() +  
+  ggtitle("Najpopularniejsze samochody")+
+  xlab("Marki samochodów")+
+  ylab("Ilość") + 
+  theme_test() +
+  geom_hline(yintercept = srednia, color = "black",linetype=4)+
+  theme(plot.title = element_text(size = 15,  face= 'bold', margin = ))+
+  theme(legend.title =element_text(size = 40, face= 'bold'), legend.position = "bottom")+
+  theme(axis.title.x = element_text( face="bold"))+
+  theme(axis.title.y= element_text( face="bold")) 
+
+
+```
+
+Najpopularniejszymi markami jest Ford i Chevrolet 
+
+Przedstawienie na wykresie kołowym
+
+```{r}
+#wyliczenie procentów
+namesOccurence$procent <- round(namesOccurence$Number_of_Occurences / sum(namesOccurence$Number_of_Occurences), digits = 2)
+pie <- namesOccurence %>% filter(procent>0) %>%
+  ggplot(aes(x = "", y=procent ,fill = factor(brand))) + 
+  geom_bar(width = 1, stat = "identity") +
+  theme(axis.line = element_blank(), 
+        plot.title = element_text(hjust=0.5)) + 
+  labs(fill="marki", 
+       x=NULL, 
+       y=NULL, 
+       title="Wykres kołowy dla marek samochodowych")
+
+pie + coord_polar(theta = "y", start=0) +  geom_text(aes(x = 1.3, label = procent), position = position_stack(vjust = 0.5), size=2) 
+```
+
+Wykres MPG dla każdej marki 
+
+```{r}
+
+Autko %>% group_by(brand) %>% 
+  summarise(sredniam = mean(mpg, na.rm = TRUE))  %>%
+  ggplot(aes(x=brand, y=sredniam))+geom_bar(stat='identity')  + coord_flip()+
+  xlab("Marki samochodów") +ylab("Średnia mpg")+
+  ggtitle("Średnia MPG")+
+  theme(plot.title = element_text(size = 15,  face= 'bold', margin = ))+
+  theme(legend.title =element_text(size = 40, face= 'bold'), legend.position = "bottom")+
+  theme(axis.title.x = element_text( face="bold"))+
+  theme(axis.title.y= element_text( face="bold"))
+
+```
+
+Wykres ilości aut w danym roku linią przerywaną zaznaczono średnią
+
+```{r}
+df<-Autko%>% group_by(model_year) %>%summarise(ilosc = n()) %>% mutate(srednia = mean(ilosc))
+Autko%>% group_by(model_year) %>%summarise(ilosc = n()) %>% ggplot(aes(x=model_year,y= ilosc ), lty=5)+
+  geom_line(group=1)+
+  geom_point(size=2)+
+  theme_bw()+
+  theme(legend.position = "none")+  xlab("Rok") +ylab("Ilość")+
+  geom_hline(yintercept = df$srednia, linetype="dotted", color="red", size=2)+
+  ggtitle("Ilość aut w danym roku")+
+  geom_text(label="") +
+  theme(axis.title.x = element_text( face="bold"))+
+  theme(axis.title.y= element_text( face="bold")) +
+  theme(plot.title = element_text(size = 15,  face= 'bold' ))
+
+```
+
+
+
+Wykres średnich horsepower i displacement w danym roku
+
+```{r}
+Autko %>% group_by(model_year)%>% summarise(srednia = mean(horsepower), srednia2 = mean(displacement)) %>%
+  ggplot(aes(x=model_year))+
+  geom_line(aes(x = model_year, y=srednia, group = 1),lty=2, size=0.8)+
+  geom_line(aes(x= model_year, y=srednia2, group = 1),size=1.2)+
+  scale_color_gradient(low = 'blue', high = 'red')+
+  theme_bw()+
+  annotate(geom="text", x=6,y=230,
+           label="displacement",color= "black", size=4 )+
+  annotate(geom="text", x=3,y=150,
+           label="horsepower",color= "black", size=4 ) +
+  ggtitle("Średnia dla horsepower i displacement w danym roku")+
+  theme(legend.position = "none")+
+  labs(x="Rok",y="") +
+  theme(axis.title.x = element_text( face="bold"))+
+  theme(axis.title.y= element_text( face="bold")) +
+  theme(plot.title = element_text(size = 15,  face= 'bold' ))
+
+```
+
+Z roku na rok można zauważyć spadek obu zmiennych
+
+Wykres przedstawiający średnie mpg dla danych marek 
+
+```{r}
+#Dodanie nowej kolumny określającej mpg
+Autko$mpgopt<- round((Autko$mpg - mean(Autko$mpg))/sd(Autko$mpg), 2)
+Autko$typ <- ifelse(Autko$mpgopt < 0, "pod", "nad")
+#Wykres
+Autko %>%group_by(brand) %>% ggplot(aes(x=brand, y=mpgopt, label=mpgopt)) + 
+  geom_bar(stat='identity', aes(fill=typ), width=.5)  +
+  scale_fill_manual(name="Według mpg", 
+                    labels = c("Powyżej średniej", "Poniżej średniej"), 
+                    values = c("nad"="#00ba38", "pod"="#f8766d")) + 
+  labs( title= "Średnie mpg dla danych marek") + 
+  coord_flip() + 
+  labs(x="Marka",y="Średnia mpg")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
