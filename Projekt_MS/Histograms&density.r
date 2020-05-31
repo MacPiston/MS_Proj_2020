@@ -1,66 +1,40 @@
-# wartoœci minimalne i maksymalne
-minmpg <- min(Autko$mpg)
-maxmpg <- max(Autko$mpg)
-mindis <- min(Autko$displacement)
-maxdis <- max(Autko$displacement)
-minpow <- min(Autko$horsepower)
-maxpow <- max(Autko$horsepower)
-minkg <- min(Autko$weight)
-maxkg <- max(Autko$weight)
-minacc <- min(Autko$acceleration)
-maxacc <- max(Autko$acceleration)
-
-# zakresy wartoœci
-zakresmpg <- maxmpg - minmpg
-zakresdis <- maxdis - mindis
-zakrespow <- maxpow - minpow
-zakreskg <- maxkg - minkg
-zakresacc <- maxacc - minacc
-
-# iloœæ danych
-ilosc <- as.numeric(nrow(Autko))
-
-pierwiastek <- sqrt(ilosc)
-pierwiastek <- ceiling(pierwiastek)
-
-# szerokoœæ
-szermpg <- zakresmpg / pierwiastek
-szerdis <- zakresdis / pierwiastek
-szerpow <- zakrespow / pierwiastek
-szerkg <- zakreskg/ pierwiastek
-szeracc <- zakresacc / pierwiastek
-
-szermpg<-szermpg[1]
-szerdis <- szerdis[1]
-szerpow <- szerpow[1]
-szerkg <- szerkg[1]
-szeracc <- szeracc[1]
-
-# punkty
-pktmpg = seq(minmpg, maxmpg, by = szermpg)
-pktdis = seq(mindis, maxdis, by = szerdis)
-pktpow = seq(minpow, maxpow, by = szerpow)
-pktkg = seq(minkg, maxkg, by = szerkg)
-pktacc = seq(minacc, maxacc, by = szeracc)
-
-# przedzia³y
-przedzialmpg <- cut(Autko$mpg, pktmpg, right = FALSE, include.lowest = TRUE)
-przedzialdis <- cut(Autko$dis, pktdis, right = FALSE, include.lowest = TRUE)
-przedzialpow <- cut(Autko$mpg, pktpow, right = FALSE, include.lowest = TRUE)
-przedzialkg <- cut(Autko$mpg, pktkg, right = FALSE, include.lowest = TRUE)
-przedzialacc <- cut(Autko$mpg, pktacc, right = FALSE, include.lowest = TRUE)
-
+wynik <- function(x)
+{
+  min <- min(x, na.rm = TRUE)
+  max <- max(x, na.rm = TRUE)
+  zakres <- as.numeric(max - min)
+  ilosc <- as.numeric(nrow(Autko))
+  pierwiastek <- sqrt(ilosc)
+  pierwiastek <- ceiling(pierwiastek)
+  szer <- zakres / pierwiastek
+  szer <-szer[1]
+  pkt = seq(min, max, by = szer)
+  rezultat <- c(min, max, szer, pkt)
+  return(rezultat)
+}
+#dane zapisane w wektorze
+mpg<-wynik(Autko$mpg)
+dis<-wynik(Autko$displacement)
+kg<-wynik(Autko$weight)
+pow<-wynik(Autko$horsepower)
+acc<-wynik(Autko$acceleration)
+#przedziały
+przedzialmpg <- cut(Autko$mpg, mpg[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialdis <- cut(Autko$displacement, dis[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialpow <- cut(Autko$horsepower, pow[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialkg <- cut(Autko$weight, kg[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
+przedzialacc <- cut(Autko$acceleration, acc[-c(1,2,3)], right = FALSE, include.lowest = TRUE)
 # szeregi rozdzielcze
 szeregmpg <- table(przedzialmpg)
 szeregdis <- table(przedzialdis)
 szeregpow <- table(przedzialpow)
 szeregkg <- table(przedzialkg)
 szeregacc <- table(przedzialacc)
-
-# histogramy + wykresy gęstości
-ggplot(Autko, aes(x=mpg)) + geom_histogram(breaks = pktmpg, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram mpg")
-ggplot(Autko, aes(x=displacement)) + geom_histogram(breaks = pktdis, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram displacement")
-ggplot(Autko, aes(x=horsepower)) + geom_histogram(breaks = pktpow, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram horsepowe")
-ggplot(Autko, aes(x=weight)) + geom_histogram(breaks = pktkg, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram weight")
+#histogramy
+ggplot(Autko, aes(x=mpg)) + geom_histogram(breaks =  mpg[-c(1,2,3)] , aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram mpg")
+ggplot(Autko, aes(x=displacement)) + geom_histogram(breaks = dis[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram displacement")
+ggplot(Autko, aes(x=horsepower)) +  geom_histogram(breaks = pow[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram horsepowe")
+ggplot(Autko, aes(x=weight)) + geom_histogram(breaks = kg[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram weight")
 ggplot(Autko, aes(x=acceleration)) + geom_histogram(breaks = pktacc, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram acceleration")
+
 
