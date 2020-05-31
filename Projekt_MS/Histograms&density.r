@@ -33,7 +33,7 @@ szeregacc <- table(przedzialacc)
 #histogramy
 ggplot(Autko, aes(x=mpg)) + geom_histogram(breaks =  mpg[-c(1,2,3)] , aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram mpg")
 ggplot(Autko, aes(x=displacement)) + geom_histogram(breaks = dis[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram displacement")
-ggplot(Autko, aes(x=horsepower)) +  geom_histogram(breaks = pow[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram horsepowe")
+ggplot(Autko, aes(x=horsepower)) +  geom_histogram(breaks = pow[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram horsepower")
 ggplot(Autko, aes(x=weight)) + geom_histogram(breaks = kg[-c(1,2,3)], aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram weight")
 ggplot(Autko, aes(x=acceleration)) + geom_histogram(breaks = pktacc, aes(y=..density..),  colour="black", fill="white") + geom_density(alpha=.2, fill="blue") + labs(title = "Histogram acceleration")
 
